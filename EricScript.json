@@ -1,0 +1,946 @@
+{
+  "class": "Workflow",
+  "steps": [
+    {
+      "id": "#SBG_Group_files_by_Metadata",
+      "run": {
+        "arguments": [
+          {
+            "prefix": "--in_metafile",
+            "valueFrom": "job.json",
+            "separate": true,
+            "position": 1
+          },
+          {
+            "prefix": "--out_metafile",
+            "valueFrom": "cwl.output.json",
+            "separate": true,
+            "position": 2
+          }
+        ],
+        "sbg:id": "anurag.sethi/bladder-urothelia-carninoma-gene-fusion-detection/group-by-metadata/0",
+        "sbg:createdOn": 1495327963,
+        "cwlVersion": "sbg:draft-2",
+        "inputs": [
+          {
+            "description": "Select one of the metadata fields based on which files need to be grouped.",
+            "type": [
+              "null",
+              {
+                "type": "enum",
+                "symbols": [
+                  "sample_id",
+                  "case_id",
+                  "platform"
+                ],
+                "name": "metadata_field"
+              }
+            ],
+            "label": "Metadata field to group by",
+            "inputBinding": {
+              "prefix": "--metadata_field",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 3
+            },
+            "id": "#metadata_field"
+          },
+          {
+            "required": false,
+            "description": "List of files with properly set metadata fields.",
+            "type": [
+              "null",
+              {
+                "items": "File",
+                "type": "array"
+              }
+            ],
+            "sbg:stageInput": "link",
+            "label": "List of files for grouping",
+            "id": "#input_files"
+          }
+        ],
+        "sbg:revisionNotes": "Copy of anurag.sethi/brca-1/group-by-metadata/0",
+        "x": 562,
+        "sbg:modifiedOn": 1495327963,
+        "class": "CommandLineTool",
+        "sbg:revisionsInfo": [
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "Copy of anurag.sethi/brca-1/group-by-metadata/0",
+            "sbg:modifiedOn": 1495327963,
+            "sbg:revision": 0
+          }
+        ],
+        "sbg:project": "anurag.sethi/bladder-urothelia-carninoma-gene-fusion-detection",
+        "sbg:latestRevision": 0,
+        "sbg:contributors": [
+          "anurag.sethi"
+        ],
+        "sbg:modifiedBy": "anurag.sethi",
+        "outputs": [
+          {
+            "type": [
+              "null",
+              {
+                "items": "File",
+                "type": "array"
+              }
+            ],
+            "id": "#tuple_list"
+          }
+        ],
+        "sbg:image_url": null,
+        "successCodes": [],
+        "y": 249.015625,
+        "sbg:copyOf": "anurag.sethi/brca-1/group-by-metadata/0",
+        "sbg:cmdPreview": "python pair_by_metadata.py --in_metafile job.json --out_metafile cwl.output.json",
+        "stdout": "",
+        "baseCommand": [
+          "python",
+          "pair_by_metadata.py"
+        ],
+        "label": "SBG Group files by Metadata",
+        "sbg:toolkit": "SBGTools",
+        "stdin": "",
+        "hints": [
+          {
+            "value": 1,
+            "class": "sbg:CPURequirement"
+          },
+          {
+            "value": 1024,
+            "class": "sbg:MemRequirement"
+          },
+          {
+            "dockerPull": "images.sbgenomics.com/djordje_klisic/sbg-pair-fastqs-by-metadata:1.0",
+            "dockerImageId": "",
+            "class": "DockerRequirement"
+          }
+        ],
+        "temporaryFailCodes": [],
+        "sbg:toolAuthor": "Raunaq Malhotra,  Seven Bridges Genomics, <raunaq.malhotra@sbgenomics.com>",
+        "id": "anurag.sethi/bladder-urothelia-carninoma-gene-fusion-detection/group-by-metadata/0",
+        "sbg:toolkitVersion": "1.0",
+        "description": "Tool accepts list of files as input and groups them based on their metadata field. The grouping is done using metadata values in three possible fields : sample_id, case_id, platform. Metadata that fields that are uniquely defining one group are either Sample ID, Case ID, Platform unit ID. Only one of these four metadata fields are required, but it has to be such that it uniquely defines grouping of files.",
+        "sbg:appVersion": [
+          "sbg:draft-2"
+        ],
+        "sbg:projectName": "Bladder Urothelia Carninoma gene fusion detection",
+        "sbg:createdBy": "anurag.sethi",
+        "sbg:sbgMaintained": false,
+        "requirements": [
+          {
+            "fileDef": [
+              {
+                "fileContent": "import functools\nimport json\nimport itertools\nimport docopt\nimport types\nUSAGE = \"\"\"\n    Usage:\n    SBG-Pair-By-Metadata.py --in_metafile FILE --metadata_field STRING --out_metafile FILE [options]\n    \n    Description:\n    Tool accepts list of files for one sample as the input and groups them based on their metadata field. This grouping is done using metadata values that are creating\n    unique combination for the files. Metadata that fields that are uniquely defining\n    one group are Sample ID, Library ID, Platform Unit ID and File Segment Number. Listed order of metadata fields is also\n    representing their hierarchy in the metadata structure. Not all of these four metadata fields are required,\n    but the present set has to be sufficient to create unique combinations for each pair of FASTQ files.\n    \n    Options:\n    \n    --help                                Show help dialog.\n    \n    --version                             Tool version.\n    \n    --in_metafile FILE                    File from which necessary metadata information will be extracted.\n    Expected value for the SBG platfrom is job.json. [Default: job.json]\n    \n    --out_metafile FILE                   File into which necessary file structure is going to be written.\n    Expected value for the SBG platform is cwl.output.json.\n    [Default: cwl.output.json]\n    \n    --metadata_field STRING                     String value based on which the grouping has to be performed.\n    [Default: sample_id]\n    \n    \n    \"\"\"\n\ndef main():\n    \n    args = docopt.docopt(USAGE, version = 1.0)\n    \n    job_json = args[\"--in_metafile\"]\n    job_json_file = open(job_json)\n    job_json_str = job_json_file.read()\n    job_json_dict = json.loads(job_json_str)\n    files_list = job_json_dict['inputs'][\"input_files\"]\n    print files_list\n    if(isinstance(files_list[0],dict)):\n        #   print \"dict yes\"\n        # If only a single list, no need to flatten\n        files_list = job_json_dict['inputs'][\"input_files\"]\n    elif isinstance(files_list, list):\n        # flatten a nested list if it exists\n        files_list = job_json_dict['inputs'][\"input_files\"]\n        files_list_new = [elem for sublist in files_list for elem in sublist]\n        files_list = files_list_new\n        print \"here\"\n    else:\n        #default case from sbg group fastq by metadata\n        files_list = list()\n        files_list.append(job_json_dict['inputs'][\"input_files\"])\n    while None in files_list:\n        files_list.remove(None)\n    print files_list\n    metadata_dictionary_list = [{elem['path'] : elem['metadata']} for elem in files_list]\n    file_dictionary = {elem['path']: elem for elem in files_list}\n    # Start working with the newly created dictionary for generating outputfile\n    metadata_field = args[\"--metadata_field\"]\n    print(\"Generating groups based on %s\" % metadata_field)\n    gathered_samples = []\n    # Gathering the metadata_field from each sample\n    gathered_samples = dict()\n    for elem in metadata_dictionary_list:\n        key = elem.keys()[0]\n        metadata_field_value =  elem[key][metadata_field]\n        if metadata_field_value in gathered_samples:\n            gathered_samples[metadata_field_value].append(file_dictionary[key])\n        else:\n            gathered_samples[metadata_field_value] = [file_dictionary[key]]\n\n    # Commiting the results to the output file\n    tuple_list_dict = {\"tuple_list\": gathered_samples.values()}\n\n    with open(args[\"--out_metafile\"],\"w\") as p:\n        json.dump(tuple_list_dict,p)\n\n\n\nif __name__ == '__main__':\n    main()",
+                "filename": "pair_by_metadata.py"
+              }
+            ],
+            "class": "CreateFileRequirement"
+          }
+        ],
+        "sbg:job": {
+          "allocatedResources": {
+            "cpu": 1,
+            "mem": 1024
+          },
+          "inputs": {
+            "input_files": [
+              {
+                "secondaryFiles": [],
+                "path": "/path/to/input_files-1.ext",
+                "class": "File",
+                "size": 0
+              },
+              {
+                "secondaryFiles": [],
+                "path": "/path/to/input_files-2.ext",
+                "class": "File",
+                "size": 0
+              }
+            ],
+            "metadata_field": "case_id"
+          }
+        },
+        "sbg:license": "Apache License 2.0",
+        "sbg:validationErrors": [],
+        "sbg:revision": 0
+      },
+      "inputs": [
+        {
+          "id": "#SBG_Group_files_by_Metadata.metadata_field",
+          "default": "case_id"
+        },
+        {
+          "id": "#SBG_Group_files_by_Metadata.input_files",
+          "source": [
+            "#SBG_Unpack_FASTQs.output_fastq_files"
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "id": "#SBG_Group_files_by_Metadata.tuple_list"
+        }
+      ],
+      "sbg:x": 562,
+      "sbg:y": 249.015625
+    },
+    {
+      "id": "#SBG_Unpack_FASTQs",
+      "run": {
+        "arguments": [],
+        "sbg:id": "anurag.sethi/bladder-urothelia-carninoma-gene-fusion-detection/sbg-unpack-fastqs-1-0/0",
+        "sbg:createdOn": 1495327952,
+        "cwlVersion": "sbg:draft-2",
+        "inputs": [
+          {
+            "type": [
+              "File"
+            ],
+            "required": true,
+            "sbg:category": "",
+            "description": "The input archive file, containing FASTQ files, to be unpacked.",
+            "inputBinding": {
+              "prefix": "--input_archive_file",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 0
+            },
+            "sbg:fileTypes": "TAR, TAR.GZ, TGZ, TAR.BZ2, TBZ2,  GZ, BZ2, ZIP",
+            "label": "Input archive file",
+            "id": "#input_archive_file"
+          }
+        ],
+        "sbg:revisionNotes": "Copy of anurag.sethi/brca-1/sbg-unpack-fastqs-1-0/0",
+        "x": 353,
+        "sbg:modifiedOn": 1495327952,
+        "class": "CommandLineTool",
+        "sbg:revisionsInfo": [
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "Copy of anurag.sethi/brca-1/sbg-unpack-fastqs-1-0/0",
+            "sbg:modifiedOn": 1495327952,
+            "sbg:revision": 0
+          }
+        ],
+        "sbg:project": "anurag.sethi/bladder-urothelia-carninoma-gene-fusion-detection",
+        "sbg:latestRevision": 0,
+        "sbg:contributors": [
+          "anurag.sethi"
+        ],
+        "sbg:modifiedBy": "anurag.sethi",
+        "outputs": [
+          {
+            "outputBinding": {
+              "sbg:metadata": {
+                "paired_end": {
+                  "script": "{\n  filepath = $self.path\n  filename = filepath.split(\"/\").pop();\n  if (filename.lastIndexOf(\".fastq\") !== 0)\n  \tp = filename[filename.lastIndexOf(\".fastq\") - 1 ]\n  if ((p == 1) || (p == 2))\n    return p\n  else\n    return \"\"\n}",
+                  "engine": "#cwl-js-engine",
+                  "class": "Expression"
+                }
+              },
+              "glob": "decompressed_files/*.fastq",
+              "sbg:inheritMetadataFrom": "#input_archive_file"
+            },
+            "sbg:fileTypes": "FASTQ",
+            "description": "Output FASTQ files.",
+            "type": [
+              {
+                "items": "File",
+                "type": "array",
+                "name": "output_fastq_files"
+              }
+            ],
+            "label": "Output FASTQ files",
+            "id": "#output_fastq_files"
+          }
+        ],
+        "sbg:image_url": null,
+        "successCodes": [],
+        "sbg:copyOf": "anurag.sethi/brca-1/sbg-unpack-fastqs-1-0/0",
+        "sbg:homepage": "https://igor.sbgenomics.com/",
+        "temporaryFailCodes": [],
+        "sbg:cmdPreview": "/opt/sbg_unpack_fastqs.py --input_archive_file input_file.tar > out.txt",
+        "stdout": "out.txt",
+        "baseCommand": [
+          "/opt/sbg_unpack_fastqs.py"
+        ],
+        "label": "SBG Unpack FASTQs",
+        "sbg:toolkit": "SBGTools",
+        "stdin": "",
+        "hints": [
+          {
+            "dockerPull": "images.sbgenomics.com/markop/sbg-unpack-fastqs:1.0",
+            "dockerImageId": "df9e1c169beb",
+            "class": "DockerRequirement"
+          },
+          {
+            "value": 1,
+            "class": "sbg:CPURequirement"
+          },
+          {
+            "value": 1000,
+            "class": "sbg:MemRequirement"
+          },
+          {
+            "value": "true",
+            "class": "sbg:useSbgFS"
+          }
+        ],
+        "sbg:toolAuthor": "Marko Petkovic, Seven Bridges Genomics",
+        "sbg:categories": [
+          "Other"
+        ],
+        "id": "anurag.sethi/bladder-urothelia-carninoma-gene-fusion-detection/sbg-unpack-fastqs-1-0/0",
+        "sbg:toolkitVersion": "v1.0",
+        "description": "**SBG Unpack FASTQs** performs the extraction of the input archive, containing FASTQ files. \nThis tool also sets the \"paired_end\" metadata field. It assumes that FASTQ file names are formatted in this manner:\nfirst pair reads FASTQ file        -  *1.fastq\nsecond pair reads FASTQ file  -  * 2.fastq. \nwhere * represents any string.\n**This tool is designed to be used for paired-end metadata with above mentioned name formatting only.**\nSupported formats are:\n1. TAR\n2. TAR.GZ (TGZ)\n3. TAR.BZ2 (TBZ2)\n4. GZ\n5. BZ2\n6. ZIP",
+        "y": 228.015625,
+        "sbg:appVersion": [
+          "sbg:draft-2"
+        ],
+        "sbg:projectName": "Bladder Urothelia Carninoma gene fusion detection",
+        "sbg:createdBy": "anurag.sethi",
+        "appUrl": "/u/anurag.sethi/bladder-urothelia-carninoma-gene-fusion-detection/apps/#anurag.sethi/bladder-urothelia-carninoma-gene-fusion-detection/sbg-unpack-fastqs-1-0/0",
+        "sbg:sbgMaintained": false,
+        "requirements": [
+          {
+            "requirements": [
+              {
+                "dockerPull": "rabix/js-engine",
+                "class": "DockerRequirement"
+              }
+            ],
+            "class": "ExpressionEngineRequirement",
+            "id": "#cwl-js-engine"
+          }
+        ],
+        "sbg:job": {
+          "allocatedResources": {
+            "cpu": 1,
+            "mem": 1000
+          },
+          "inputs": {
+            "input_archive_file": {
+              "secondaryFiles": [],
+              "path": "input_file.tar",
+              "class": "File",
+              "size": 0
+            }
+          }
+        },
+        "sbg:license": "Apache License 2.0",
+        "sbg:validationErrors": [],
+        "sbg:revision": 0
+      },
+      "inputs": [
+        {
+          "id": "#SBG_Unpack_FASTQs.input_archive_file",
+          "source": [
+            "#input_archive_file"
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "id": "#SBG_Unpack_FASTQs.output_fastq_files"
+        }
+      ],
+      "sbg:x": 353,
+      "sbg:y": 228.015625,
+      "scatter": "#SBG_Unpack_FASTQs.input_archive_file"
+    },
+    {
+      "id": "#ericscript",
+      "run": {
+        "arguments": [
+          {
+            "prefix": "--outputfolder",
+            "valueFrom": "./es_output",
+            "separate": true,
+            "position": 2
+          },
+          {
+            "prefix": "--dbfolder",
+            "valueFrom": {
+              "script": "$job.inputs.ericscript_database_archive.path.split(\"/\").slice(-1)[0].split(\".\").slice(0,-2).join(\".\")",
+              "engine": "#cwl-js-engine",
+              "class": "Expression"
+            },
+            "separate": true,
+            "position": 3
+          },
+          {
+            "prefix": "",
+            "valueFrom": "--remove",
+            "separate": false,
+            "position": 8
+          }
+        ],
+        "sbg:id": "anurag.sethi/ericscript/ericscript/12",
+        "sbg:createdOn": 1484199130,
+        "cwlVersion": "sbg:draft-2",
+        "inputs": [
+          {
+            "type": [
+              "null",
+              "int"
+            ],
+            "required": false,
+            "description": "Number of threads for the bwa aln process.",
+            "sbg:toolDefaultValue": "1",
+            "inputBinding": {
+              "prefix": "--nthreads",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 6
+            },
+            "label": "threads",
+            "id": "#threads"
+          },
+          {
+            "type": [
+              "null",
+              "string"
+            ],
+            "required": false,
+            "description": "Name of sample",
+            "sbg:toolDefaultValue": "MyEric",
+            "inputBinding": {
+              "prefix": "--samplename",
+              "valueFrom": {
+                "script": "{\n  if ($job.inputs.sample_name) {\n    return $job.inputs.sample_name\n  } else if (($job.inputs.fastq_pair[0].metadata) && ($job.inputs.fastq_pair[0].metadata.sample_id)) {\n    return $job.inputs.fastq_pair[0].metadata.sample_id\n  } else {\n    return \"MyEric\"\n  }\n}",
+                "engine": "#cwl-js-engine",
+                "class": "Expression"
+              },
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 1
+            },
+            "label": "sample_name",
+            "id": "#sample_name"
+          },
+          {
+            "type": [
+              "null",
+              "int"
+            ],
+            "required": false,
+            "description": "trim PE reads from 1st base to $ntrim. Trimmed reads will be used only for the first alignment (identification               of discordant reads). Setting ntrim to values lower than orginal read length allows EricScript to               increase its sensitivity, especially when the length of reads is 75nt or 100 nt.               Default is no trimming. Set ntrim=0 to don't trim reads.",
+            "sbg:toolDefaultValue": "0",
+            "inputBinding": {
+              "prefix": "-ntrim",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 5
+            },
+            "sbg:stageInput": null,
+            "label": "n_trim",
+            "id": "#n_trim"
+          },
+          {
+            "type": [
+              "null",
+              "int"
+            ],
+            "required": false,
+            "description": "Minimum reads to consider discordant alignments. Default is 3 reads with minimum MAPQ.",
+            "sbg:toolDefaultValue": "3",
+            "inputBinding": {
+              "prefix": "--minreads",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 4
+            },
+            "sbg:stageInput": null,
+            "label": "min_reads",
+            "id": "#min_reads"
+          },
+          {
+            "type": [
+              "null",
+              "int"
+            ],
+            "required": false,
+            "description": "minimum value of mapping quality to consider discordant reads. For MAPQ 0 use a negative value.",
+            "sbg:toolDefaultValue": "20",
+            "inputBinding": {
+              "prefix": "--MAPQ",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 7
+            },
+            "sbg:stageInput": null,
+            "label": "mapq",
+            "id": "#mapq"
+          },
+          {
+            "required": false,
+            "sbg:fileTypes": "FASTQ,FASTQ.GZ",
+            "type": [
+              "null",
+              {
+                "items": "File",
+                "type": "array"
+              }
+            ],
+            "id": "#fastq_pair",
+            "inputBinding": {
+              "itemSeparator": " ",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 100
+            },
+            "label": "fastq_pair"
+          },
+          {
+            "type": [
+              "null",
+              "File"
+            ],
+            "sbg:fileTypes": "TAR.BZ2",
+            "required": false,
+            "label": "ericsript_database_archive",
+            "id": "#ericscript_database_archive"
+          },
+          {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "required": false,
+            "description": "Run a demonstration of EricScript on simulated reads.",
+            "sbg:toolDefaultValue": "False",
+            "inputBinding": {
+              "prefix": "--demo",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 9
+            },
+            "label": "demo",
+            "id": "#demo"
+          },
+          {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "required": false,
+            "description": "Use BWA ALN instead of BWA MEM to search for discordant reads",
+            "sbg:toolDefaultValue": "False",
+            "inputBinding": {
+              "prefix": "--bwa_aln",
+              "sbg:cmdInclude": true,
+              "separate": true,
+              "position": 9
+            },
+            "sbg:stageInput": null,
+            "label": "bwa_aln",
+            "id": "#bwa_aln"
+          }
+        ],
+        "description": "Usage:\n     ericscript.pl [arguments] <reads_1.fq(.gz)> <reads_2.fq(.gz)>\n \n            Optional arguments:\n            -h, --help                      print help message\n            -m, --man                       print complete documentation\n            -v, --verbose                   use verbose output\n            -name, --samplename <string>    what's the name of your sample?\n            -o, --outputfolder <string>     where the results will be stored\n            -db, --dbfolder <string>        where database is stored. Default is ERICSCRIPT_FOLDER/lib/\n            -minr, --minreads <int>         minimum reads to consider discordant alignments [3]\n            -p, --nthreads <int>            number of threads for the bwa aln process [4]\n            -ntrim <int>                    trim PE reads from 1st base to $ntrim. Default is no trimming. Set ntrim=0 to don't trim reads.\n            --MAPQ <int>                    minimum value of mapping quality to consider discordant reads. For MAPQ 0 use a negative value [20]\n            --remove                        remove all temporary files.\n            --demo                          Run a demonstration of EricScript on simulated reads.\n            --refid                         Genome reference identification. Run ericscript.pl --printdb to see available refid [homo_sapiens].\n            --bwa_aln                       Use BWA ALN instead of BWA MEM to search for discordant reads.\n\n            Subcommands:\n            --checkdb                       Check if your database is up-to-date, based on the latest Ensembl release.\n            --downdb                        Download, build database. refid parameter need to be specified.\n            --simulator                     Generate synthetic gene fusions with the same recipe of the ericscript's paper\n            --calcstats                     Calculate the statistics that we used in our paper to evaluate the performance of the algorithms.\n        \n            --------\n            arguments for databases subcommands (downdb, checkdb):\n\n                    -db, --dbfolder <string>        where database is stored. Default is ERICSCRIPT_FOLDER/lib/\n                    --refid                         Genome reference identification. Run ericscript.pl --printdb to see available refid [homo_sapiens].\n                    --printdb                       Print a list of available genomes and exit.\n                    --ensversion            Download data of a specific Ensembl version (>= 70). Default is the latest one.\n \n            -------\n            arguments for simulator:\n                    -o, --outputfolder <string>     where synthetic datasets will be stored [HOME/ericscript_simulator]\n                    -rl, --readlength <int>         length of synthetic reads [75]\n                    --refid                         Genome reference identification. Run ericscript.pl --printdb to see available refid [homo_sapiens].\n                    -v, --verbose                   use verbose output\n                    --insize                        parameter of wgsym. Outer distance between the two ends [200]\n                    --sd_insize                     parameter of wgsym. Standard deviation [50]\n                    --ngenefusion                   The number of synthetic gene fusions per dataset? [50]\n                    --min_cov                       Minimum coverage to simulate [1]\n                    --max_cov                       Maximum coverage to simulate [50]\n                    --nsims                         The number of synthetic datasets to simulate [10]\n                    --be                            Use --be to generate Broken Exons (BE) data [no]\n                    --ie                            Use --ie to generate Intact Exons (IE) data [yes]\n                    -db, --dbfolder                 where database is stored. Default is ERICSCRIPT_FOLDER/lib/ \n                    --background_1                  Fastq file (forward)  for generating background reads. \n                    --background_2                  Fastq file (reverse) for generating background reads. \n                    --nreads_background             The number of reads to extract from background data [200e3].\n\nOptions:  \n  \n    --help\n             print a brief usage message and detailed explanation of options.\n\n    --man\n             print the complete manual of the program.\n\n    --verbose\n             use verbose output.\n\n    --samplename\n             Choose a name for your sample. Default is \"MyEric\"\n\n    --outputfolder\n             Folder that will contain all the results of the analysis. Default is YOUR_HOME/SAMPLENAME\n\n    --dbfolder\n             Folder that contains transcriptome sequences and information of the downloaded species. Default is\n             ERICSCRIPT_FOLDER/lib\n\n    --minreads\n             Minimum reads to consider discordant alignments. Default is 3 reads with minimum MAPQ.\n\n    -ntrim\n             trim PE reads from 1st base to $ntrim. Trimmed reads will be used only for the first alignment (identification \n             of discordant reads). Setting ntrim to values lower than orginal read length allows EricScript to \n             increase its sensitivity, especially when the length of reads is 75nt or 100 nt. \n             Default is no trimming. Set ntrim=0 to don't trim reads.\n\n    --nthreads\n             Number of threads for the bwa aln process.\n\n    --MAPQ\n             minimum value of mapping quality to consider discordant reads. For MAPQ 0 use a negative value. Default is 20.\n\n    --remove\n             remove all temporary files. By default, all temporary files will be kept for \n             user inspection, but this will easily clutter the directory.\n\n    --checkdb\n             Check if your database is up-to-date, based on the latest Ensembl release.\n\n    --downdb\n             Download, build database. refid parameter need to be specified.\n\n    --refid\n             Genome reference identification. Run ericscript.pl --printdb to see available refid.[homo_sapiens]\n\n    --ensversion\n             Download data of a specific version of Ensembl. Default is downloading the latest version of Ensembl.\n             Minimum supported version is 70.\n\n    --printdb\n             Print a list of available genomes and exit.\n\n    --demo\n             Run a demonstration of EricScript on simulated reads.",
+        "x": 723,
+        "sbg:modifiedOn": 1484873858,
+        "class": "CommandLineTool",
+        "sbg:revisionsInfo": [
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": null,
+            "sbg:modifiedOn": 1484199130,
+            "sbg:revision": 0
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "Installed from CGR lab CWL/dockerfile",
+            "sbg:modifiedOn": 1484199268,
+            "sbg:revision": 1
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "changed database file to tar.bz2 format for now",
+            "sbg:modifiedOn": 1484345161,
+            "sbg:revision": 2
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": null,
+            "sbg:modifiedOn": 1484760119,
+            "sbg:revision": 3
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": null,
+            "sbg:modifiedOn": 1484760221,
+            "sbg:revision": 4
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": null,
+            "sbg:modifiedOn": 1484771291,
+            "sbg:revision": 5
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": null,
+            "sbg:modifiedOn": 1484776502,
+            "sbg:revision": 6
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "sample name changed and demo default value changed",
+            "sbg:modifiedOn": 1484798642,
+            "sbg:revision": 7
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "added bwa_aln flag",
+            "sbg:modifiedOn": 1484800400,
+            "sbg:revision": 8
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "Output port capturing",
+            "sbg:modifiedOn": 1484835540,
+            "sbg:revision": 9
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "Modified output ports",
+            "sbg:modifiedOn": 1484835726,
+            "sbg:revision": 10
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": null,
+            "sbg:modifiedOn": 1484855993,
+            "sbg:revision": 11
+          },
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": null,
+            "sbg:modifiedOn": 1484873858,
+            "sbg:revision": 12
+          }
+        ],
+        "sbg:projectName": "ericScript",
+        "sbg:latestRevision": 12,
+        "sbg:revision": 12,
+        "sbg:job": {
+          "allocatedResources": {
+            "cpu": 1,
+            "mem": 1000
+          },
+          "inputs": {
+            "threads": 5,
+            "min_reads": 7,
+            "ericscript_database_archive": {
+              "secondaryFiles": [],
+              "path": "/path/to/ericscript_database_archive.tar.bz2",
+              "class": "File",
+              "size": 0
+            },
+            "demo": true,
+            "bwa_aln": true,
+            "sample_name": "",
+            "fastq_pair": [
+              {
+                "secondaryFiles": [],
+                "path": "/path/to/fastq_pair-1.ext",
+                "metadata": {
+                  "sample_id": "SampleA"
+                },
+                "class": "File",
+                "size": 0
+              },
+              {
+                "secondaryFiles": [],
+                "path": "/path/to/fastq_pair-2.ext",
+                "class": "File",
+                "size": 0
+              }
+            ],
+            "n_trim": 7,
+            "mapq": 10
+          }
+        },
+        "outputs": [
+          {
+            "outputBinding": {
+              "glob": "./es_output/*total.tsv",
+              "sbg:inheritMetadataFrom": "#fastq_pair"
+            },
+            "sbg:fileTypes": "TSV",
+            "description": "total gene fusion table",
+            "type": [
+              "null",
+              "File"
+            ],
+            "label": "total_table",
+            "id": "#total_table"
+          },
+          {
+            "type": [
+              "null",
+              "File"
+            ],
+            "outputBinding": {
+              "glob": "./es_output/*Summary.RData",
+              "sbg:inheritMetadataFrom": "#fastq_pair"
+            },
+            "id": "#summary_RData"
+          },
+          {
+            "outputBinding": {
+              "glob": "./es_output/*filtered.tsv",
+              "sbg:inheritMetadataFrom": "#fastq_pair"
+            },
+            "sbg:fileTypes": "TSV",
+            "description": "filtered gene fusion table",
+            "type": [
+              "null",
+              "File"
+            ],
+            "label": "filtered_table",
+            "id": "#filtered_table"
+          }
+        ],
+        "sbg:image_url": null,
+        "successCodes": [],
+        "label": "ericscript",
+        "temporaryFailCodes": [],
+        "sbg:cmdPreview": "tar -jxvf /path/to/ericscript_database_archive.tar.bz2 ; perl /opt/ericscript-0.5.5/ericscript.pl --outputfolder ./es_output --dbfolder ericscript_database_archive --remove",
+        "stdout": "",
+        "sbg:appVersion": [
+          "sbg:draft-2"
+        ],
+        "baseCommand": [
+          "tar",
+          "-jxvf",
+          {
+            "script": "$job.inputs.ericscript_database_archive.path",
+            "engine": "#cwl-js-engine",
+            "class": "Expression"
+          },
+          ";",
+          "perl",
+          "/opt/ericscript-0.5.5/ericscript.pl"
+        ],
+        "stdin": "",
+        "hints": [
+          {
+            "value": 1,
+            "class": "sbg:CPURequirement"
+          },
+          {
+            "value": 1000,
+            "class": "sbg:MemRequirement"
+          },
+          {
+            "dockerPull": "cgc-images.sbgenomics.com/anurag_sethi/ericscript:0.5.5",
+            "dockerImageId": "",
+            "class": "DockerRequirement"
+          }
+        ],
+        "sbg:project": "anurag.sethi/ericscript",
+        "id": "anurag.sethi/ericscript/ericscript/12",
+        "y": 363.015625,
+        "appUrl": "/u/anurag.sethi/ericscript/apps/#anurag.sethi/ericscript/ericscript/12",
+        "sbg:createdBy": "anurag.sethi",
+        "sbg:sbgMaintained": false,
+        "requirements": [
+          {
+            "requirements": [
+              {
+                "dockerPull": "rabix/js-engine",
+                "class": "DockerRequirement"
+              }
+            ],
+            "class": "ExpressionEngineRequirement",
+            "id": "#cwl-js-engine"
+          },
+          {
+            "fileDef": [
+              {
+                "fileContent": {
+                  "script": "'#!/bin/bash \\n\\\ntar -jxvf '+$job.inputs.ericscript_database_archive.path+' \\n\\\n/opt/EricScript/ericscript.pl -db ./ericscript_db_homosapiens_ensembl73 \\\n-o ./es_output \\\n-p '+$job.inputs.threads+' \\\n'+$job.inputs.fastq_pair[0].path+' '+$job.inputs.fastq_pair[1].path+' \\n\\\n# copy results to main dir and prepend sample_id \\n\\\ncp es_output/MyEric.results.total.tsv ./'+$job.inputs.fastq_pair[0].metadata.sample_id+'_es_total.tsv \\n\\\ncp es_output/MyEric.results.filtered.tsv ./'+$job.inputs.fastq_pair[0].metadata.sample_id+'_es_filtered.tsv \\n\\\ncp es_output/MyEric.Summary.RData ./'+$job.inputs.fastq_pair[0].metadata.sample_id+'_summary.RData \\\n\\\n'",
+                  "engine": "#cwl-js-engine",
+                  "class": "Expression"
+                },
+                "filename": "eric_script.sh"
+              }
+            ],
+            "class": "CreateFileRequirement"
+          }
+        ],
+        "sbg:modifiedBy": "anurag.sethi",
+        "sbg:validationErrors": [],
+        "sbg:contributors": [
+          "anurag.sethi"
+        ]
+      },
+      "inputs": [
+        {
+          "id": "#ericscript.threads"
+        },
+        {
+          "id": "#ericscript.sample_name"
+        },
+        {
+          "id": "#ericscript.n_trim"
+        },
+        {
+          "id": "#ericscript.min_reads"
+        },
+        {
+          "id": "#ericscript.mapq"
+        },
+        {
+          "id": "#ericscript.fastq_pair",
+          "source": [
+            "#SBG_Group_files_by_Metadata.tuple_list"
+          ]
+        },
+        {
+          "id": "#ericscript.ericscript_database_archive",
+          "source": [
+            "#ericscript_database_archive"
+          ]
+        },
+        {
+          "id": "#ericscript.demo"
+        },
+        {
+          "id": "#ericscript.bwa_aln"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "#ericscript.total_table"
+        },
+        {
+          "id": "#ericscript.summary_RData"
+        },
+        {
+          "id": "#ericscript.filtered_table"
+        }
+      ],
+      "sbg:x": 723,
+      "sbg:y": 363.015625,
+      "scatter": "#ericscript.fastq_pair"
+    }
+  ],
+  "requirements": [],
+  "inputs": [
+    {
+      "sbg:x": 458,
+      "sbg:fileTypes": "TAR.BZ2",
+      "sbg:y": 463,
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "ericscript_database_archive",
+      "id": "#ericscript_database_archive"
+    },
+    {
+      "sbg:x": 129,
+      "sbg:includeInPorts": true,
+      "sbg:fileTypes": "TAR, TAR.GZ, TGZ, TAR.BZ2, TBZ2,  GZ, BZ2, ZIP",
+      "sbg:y": 146,
+      "type": [
+        {
+          "items": "File",
+          "type": "array"
+        }
+      ],
+      "label": "input_archive_file",
+      "id": "#input_archive_file"
+    }
+  ],
+  "outputs": [
+    {
+      "sbg:x": 1106,
+      "required": false,
+      "sbg:fileTypes": "TSV",
+      "sbg:y": 241,
+      "sbg:includeInPorts": true,
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "total_table",
+      "id": "#total_table",
+      "source": [
+        "#ericscript.total_table"
+      ]
+    },
+    {
+      "sbg:x": 1071,
+      "required": false,
+      "sbg:y": 386,
+      "sbg:includeInPorts": true,
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "summary_RData",
+      "id": "#summary_RData",
+      "source": [
+        "#ericscript.summary_RData"
+      ]
+    },
+    {
+      "sbg:x": 1091,
+      "required": false,
+      "sbg:fileTypes": "TSV",
+      "sbg:y": 590,
+      "sbg:includeInPorts": true,
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "filtered_table",
+      "id": "#filtered_table",
+      "source": [
+        "#ericscript.filtered_table"
+      ]
+    }
+  ],
+  "sbg:id": "anurag.sethi/ericscript-hg38-on-breast-cancer-samples/ericscript-1/0",
+  "sbg:createdOn": 1495752668,
+  "sbg:canvas_zoom": 1,
+  "sbg:modifiedOn": 1495752668,
+  "sbg:projectName": "ericScript hg38 on Breast cancer samples",
+  "sbg:latestRevision": 0,
+  "sbg:canvas_y": 0,
+  "sbg:image_url": "https://cgc-brood.sbgenomics.com/static/anurag.sethi/ericscript-hg38-on-breast-cancer-samples/ericscript-1/0.png",
+  "sbg:canvas_x": -2,
+  "sbg:revision": 0,
+  "sbg:contributors": [
+    "anurag.sethi"
+  ],
+  "sbg:project": "anurag.sethi/ericscript-hg38-on-breast-cancer-samples",
+  "sbg:revisionNotes": "Copy of anurag.sethi/ericscript-on-bladder-urothelia-carcinoma-samples/ericscript-1/3",
+  "sbg:copyOf": "anurag.sethi/ericscript-on-bladder-urothelia-carcinoma-samples/ericscript-1/3",
+  "sbg:appVersion": [
+    "sbg:draft-2"
+  ],
+  "sbg:createdBy": "anurag.sethi",
+  "sbg:sbgMaintained": false,
+  "sbg:modifiedBy": "anurag.sethi",
+  "sbg:validationErrors": [],
+  "sbg:revisionsInfo": [
+    {
+      "sbg:modifiedBy": "anurag.sethi",
+      "sbg:revisionNotes": "Copy of anurag.sethi/ericscript-on-bladder-urothelia-carcinoma-samples/ericscript-1/3",
+      "sbg:revision": 0,
+      "sbg:modifiedOn": 1495752668
+    }
+  ],
+  "id": "anurag.sethi/ericscript-hg38-on-breast-cancer-samples/ericscript-1/0",
+  "label": "ericScript",
+  "description": "",
+  "hints": []
+}

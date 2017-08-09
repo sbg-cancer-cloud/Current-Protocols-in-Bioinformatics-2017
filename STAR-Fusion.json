@@ -1,0 +1,730 @@
+{
+  "sbg:canvas_y": 0,
+  "sbg:image_url": "https://cgc-brood.sbgenomics.com/static/anurag.sethi/starfusion-on-breast-cancer-samples/star-fusion-workflow/0.png",
+  "sbg:canvas_x": 0,
+  "sbg:modifiedOn": 1500097666,
+  "sbg:validationErrors": [],
+  "sbg:project": "anurag.sethi/starfusion-on-breast-cancer-samples",
+  "hints": [
+    {
+      "value": "r3.8xlarge",
+      "class": "sbg:AWSInstanceType"
+    }
+  ],
+  "sbg:projectName": "Starfusion on breast cancer samples",
+  "sbg:modifiedBy": "anurag.sethi",
+  "description": "",
+  "sbg:id": "anurag.sethi/starfusion-on-breast-cancer-samples/star-fusion-workflow/0",
+  "sbg:sbgMaintained": false,
+  "steps": [
+    {
+      "outputs": [
+        {
+          "id": "#star_fusion_d2.output_array"
+        }
+      ],
+      "inputs": [
+        {
+          "id": "#star_fusion_d2.fastq_arr",
+          "source": [
+            "#SBG_Group_files_by_Metadata.tuple_list"
+          ]
+        },
+        {
+          "id": "#star_fusion_d2.CTAT_resource_lib_tar_gz",
+          "source": [
+            "#CTAT_resource_lib_tar_gz"
+          ]
+        }
+      ],
+      "sbg:y": 298.015625,
+      "run": {
+        "y": 298.015625,
+        "sbg:image_url": null,
+        "sbg:revision": 17,
+        "sbg:modifiedOn": 1495147769,
+        "sbg:validationErrors": [],
+        "description": "",
+        "sbg:project": "gauravCGC/tcga-rna-fusion-with-raunaq",
+        "hints": [
+          {
+            "class": "DockerRequirement",
+            "dockerPull": "gauravkaushik/starfusion:1.0.0"
+          },
+          {
+            "value": 32000,
+            "class": "sbg:MemRequirement"
+          },
+          {
+            "value": 4,
+            "class": "sbg:CPURequirement"
+          },
+          {
+            "value": "c4.8xlarge.ebs20",
+            "class": "sbg:AWSInstanceType"
+          }
+        ],
+        "sbg:projectName": "TCGA RNA Fusion with Raunaq ",
+        "label": "star-fusion-d2",
+        "x": 682,
+        "sbg:modifiedBy": "gauravCGC",
+        "requirements": [
+          {
+            "class": "ExpressionEngineRequirement",
+            "id": "#cwl-js-engine",
+            "requirements": [
+              {
+                "class": "DockerRequirement",
+                "dockerPull": "rabix/js-engine"
+              }
+            ]
+          },
+          {
+            "class": "CreateFileRequirement",
+            "fileDef": [
+              {
+                "fileContent": {
+                  "class": "Expression",
+                  "script": "{\n  \t// VARIABLES\n  \tvar fq1 = $job.inputs.fastq_arr[0].path\n    var fq2 = $job.inputs.fastq_arr[1].path\n    var sample_id = $job.inputs.fastq_arr[0].metadata.sample_id\n    var genome_lib_dir = $job.inputs.CTAT_resource_lib_tar_gz.path.split('/').pop().split('.').shift()\n    \n    // BEGIN SHELL SCRIPT\n    var cmd =  \"#!/bin/bash\\n\\n\"\n    \n    // If you haven't made the output directory then do so\n    cmd = cmd + \"if [ ! -d star_fusion_outdir ]; then\\n\"\n\tcmd = cmd + \"\\tmkdir star_fusion_outdir\\n\"\n\tcmd = cmd + \"fi\\n\\n\"\n    \n    // Make output directory for this sample\n    var tmp_dir = \"star_fusion_outdir_\" + sample_id\n\tcmd = cmd + \"mkdir \" + tmp_dir + \" \\n\\n\"\n\n    \n    // If you haven't untar'ed the genome_lib_dir, then do so\n    cmd = cmd + \"if [ ! -d \" + genome_lib_dir + \" ]; then\\n\"\n    cmd = cmd + \"\\ttar xf \" + $job.inputs.CTAT_resource_lib_tar_gz.path + \"\\n\"\n\tcmd = cmd + \"fi\\n\\n\"\n    \n    // STAR-Fusion\n    cmd = cmd + \"STAR-Fusion\"\n    cmd = cmd + \" --genome_lib_dir \" + genome_lib_dir\n    cmd = cmd + \" --left_fq \" + fq1\n    cmd = cmd + \" --right_fq \" + fq2\n    cmd = cmd + \" --output_dir \" + tmp_dir\n    \n    // rename files in tmp_dir\n    cmd = cmd + \"\\n\\ncd \" + tmp_dir + \"\\n\"\n    cmd = cmd + \"for f in * ; do mv \\\"$f\\\" \\\"\" + sample_id + \"_$f\\\" ; done\\n\"\n\n    // mv renamed files to star_fusion_outdir\n    cmd = cmd + \"for x in *; do\\n\\t\"\n\tcmd = cmd + \"if ! [ -d \\\"$x\\\" ]; then\\n\\t\\t\"\n    cmd = cmd + \"mv -- \\\"$x\\\" ../star_fusion_outdir/\\n\\t\"\n\tcmd = cmd + \"fi\\n\"\n    cmd = cmd + \"done\"\n\t\n    // exit code 0 to avoid failed scatter jobs\n    cmd = cmd + \"\\n\\nexit 0\"\n    \n    return cmd\n    \n}\n",
+                  "engine": "#cwl-js-engine"
+                },
+                "filename": "star_fusion.sh"
+              }
+            ]
+          }
+        ],
+        "stdin": "",
+        "sbg:sbgMaintained": false,
+        "sbg:latestRevision": 17,
+        "id": "gauravCGC/tcga-rna-fusion-with-raunaq/star-fusion-d2/17",
+        "sbg:revisionsInfo": [
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": null,
+            "sbg:modifiedOn": 1495058147,
+            "sbg:revision": 0
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Updated",
+            "sbg:modifiedOn": 1495061035,
+            "sbg:revision": 1
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Added output port",
+            "sbg:modifiedOn": 1495061109,
+            "sbg:revision": 2
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "c4.8xlarge instance",
+            "sbg:modifiedOn": 1495063310,
+            "sbg:revision": 3
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Updated minimum Memory Req to 32GB",
+            "sbg:modifiedOn": 1495063493,
+            "sbg:revision": 4
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "",
+            "sbg:modifiedOn": 1495063930,
+            "sbg:revision": 5
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Updated to shell script version of the tool",
+            "sbg:modifiedOn": 1495066489,
+            "sbg:revision": 6
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "non-functioning - set stage for scatter.",
+            "sbg:modifiedOn": 1495068321,
+            "sbg:revision": 7
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "work in progress -- switch to fastq array and shell script implementation",
+            "sbg:modifiedOn": 1495068518,
+            "sbg:revision": 8
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "work in progress -- fixed metadata in shell script.",
+            "sbg:modifiedOn": 1495068681,
+            "sbg:revision": 9
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Completed shell script -- will output files to a tmp directory, rename all with sample_id as prefix, then move to an output directory for the glob. Should be scatter-able.",
+            "sbg:modifiedOn": 1495069941,
+            "sbg:revision": 10
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Fixed tar in shell script.",
+            "sbg:modifiedOn": 1495071220,
+            "sbg:revision": 11
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Fixed metadata on output",
+            "sbg:modifiedOn": 1495074365,
+            "sbg:revision": 12
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "TEST - change to version that moves tmp files to workdir, change output glob to files with sample_id prefix.",
+            "sbg:modifiedOn": 1495074511,
+            "sbg:revision": 13
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Saved with exit code 0",
+            "sbg:modifiedOn": 1495111458,
+            "sbg:revision": 14
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Updated exit code syntax error.",
+            "sbg:modifiedOn": 1495115208,
+            "sbg:revision": 15
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Fixed mv in shell script to move only files to star_fusion_outdir and then glob from there.",
+            "sbg:modifiedOn": 1495135939,
+            "sbg:revision": 16
+          },
+          {
+            "sbg:modifiedBy": "gauravCGC",
+            "sbg:revisionNotes": "Fixed so that output files are renamed with sample_id prefix",
+            "sbg:modifiedOn": 1495147769,
+            "sbg:revision": 17
+          }
+        ],
+        "outputs": [
+          {
+            "type": [
+              "null",
+              {
+                "items": "File",
+                "type": "array"
+              }
+            ],
+            "id": "#output_array",
+            "outputBinding": {
+              "glob": "star_fusion_outdir/*",
+              "sbg:inheritMetadataFrom": "#fastq_arr"
+            }
+          }
+        ],
+        "sbg:revisionNotes": "Fixed so that output files are renamed with sample_id prefix",
+        "sbg:contributors": [
+          "gauravCGC"
+        ],
+        "inputs": [
+          {
+            "required": true,
+            "type": [
+              {
+                "items": "File",
+                "type": "array"
+              }
+            ],
+            "id": "#fastq_arr",
+            "sbg:stageInput": null
+          },
+          {
+            "required": true,
+            "type": [
+              "File"
+            ],
+            "id": "#CTAT_resource_lib_tar_gz"
+          }
+        ],
+        "temporaryFailCodes": [],
+        "cwlVersion": "sbg:draft-2",
+        "baseCommand": [
+          "chmod",
+          "+x",
+          "./star_fusion.sh;",
+          "./star_fusion.sh"
+        ],
+        "successCodes": [],
+        "class": "CommandLineTool",
+        "appUrl": "/u/gauravCGC/tcga-rna-fusion-with-raunaq/apps/#gauravCGC/tcga-rna-fusion-with-raunaq/star-fusion-d2/17",
+        "sbg:job": {
+          "runtime": {
+            "mem": 1000,
+            "cpu": 1
+          },
+          "inputs": {
+            "fastq_arr": [
+              {
+                "path": "/path/to/fastq_arr-1.fq",
+                "class": "File",
+                "size": 0,
+                "metadata": {
+                  "sample_id": "sample1"
+                },
+                "secondaryFiles": []
+              },
+              {
+                "path": "/path/to/fastq_arr-2.fq",
+                "class": "File",
+                "size": 0,
+                "metadata": {
+                  "sample_id": "sample1"
+                },
+                "secondaryFiles": []
+              }
+            ],
+            "CTAT_resource_lib_tar_gz": {
+              "path": "/path/to/GRCh38_lib.tar.gz",
+              "class": "File",
+              "size": 0,
+              "secondaryFiles": []
+            }
+          },
+          "allocatedResources": {
+            "mem": 32000,
+            "cpu": 4
+          }
+        },
+        "sbg:createdOn": 1495058147,
+        "arguments": [],
+        "stdout": "",
+        "sbg:modified": true,
+        "sbg:cmdPreview": "chmod +x ./star_fusion.sh; ./star_fusion.sh",
+        "sbg:appVersion": [
+          "sbg:draft-2"
+        ],
+        "sbg:createdBy": "gauravCGC",
+        "sbg:id": "gauravCGC/tcga-rna-fusion-with-raunaq/star-fusion-d2/17"
+      },
+      "sbg:x": 682,
+      "scatter": "#star_fusion_d2.fastq_arr",
+      "id": "#star_fusion_d2"
+    },
+    {
+      "outputs": [
+        {
+          "id": "#SBG_Unpack_FASTQs.output_fastq_files"
+        }
+      ],
+      "inputs": [
+        {
+          "id": "#SBG_Unpack_FASTQs.input_archive_file",
+          "source": [
+            "#input_archive_file"
+          ]
+        }
+      ],
+      "sbg:y": 151.58239623330863,
+      "run": {
+        "sbg:license": "Apache License 2.0",
+        "sbg:image_url": null,
+        "sbg:categories": [
+          "Other"
+        ],
+        "sbg:toolkit": "SBGTools",
+        "sbg:modifiedOn": 1489960830,
+        "sbg:validationErrors": [],
+        "sbg:revisionsInfo": [
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "Copy of LEE.HOJOON/neo-antigen/sbg-unpack-fastqs-1-0/0",
+            "sbg:modifiedOn": 1489960830,
+            "sbg:revision": 0
+          }
+        ],
+        "sbg:project": "anurag.sethi/neoantigen-tools",
+        "hints": [
+          {
+            "dockerImageId": "df9e1c169beb",
+            "class": "DockerRequirement",
+            "dockerPull": "images.sbgenomics.com/markop/sbg-unpack-fastqs:1.0"
+          },
+          {
+            "value": 1,
+            "class": "sbg:CPURequirement"
+          },
+          {
+            "value": 1000,
+            "class": "sbg:MemRequirement"
+          }
+        ],
+        "sbg:projectName": "neoantigen tools",
+        "sbg:modifiedBy": "anurag.sethi",
+        "sbg:toolkitVersion": "v1.0",
+        "description": "**SBG Unpack FASTQs** performs the extraction of the input archive, containing FASTQ files. \nThis tool also sets the \"paired_end\" metadata field. It assumes that FASTQ file names are formatted in this manner:\nfirst pair reads FASTQ file        -  *1.fastq\nsecond pair reads FASTQ file  -  * 2.fastq. \nwhere * represents any string.\n**This tool is designed to be used for paired-end metadata with above mentioned name formatting only.**\nSupported formats are:\n1. TAR\n2. TAR.GZ (TGZ)\n3. TAR.BZ2 (TBZ2)\n4. GZ\n5. BZ2\n6. ZIP",
+        "sbg:id": "anurag.sethi/neoantigen-tools/sbg-unpack-fastqs-1-0/0",
+        "sbg:job": {
+          "inputs": {
+            "input_archive_file": {
+              "path": "input_file.tar",
+              "class": "File",
+              "size": 0,
+              "secondaryFiles": []
+            }
+          },
+          "allocatedResources": {
+            "mem": 1000,
+            "cpu": 1
+          }
+        },
+        "stdin": "",
+        "sbg:sbgMaintained": false,
+        "sbg:latestRevision": 0,
+        "id": "https://cgc-api.sbgenomics.com/v2/apps/anurag.sethi/neoantigen-tools/sbg-unpack-fastqs-1-0/0/raw/",
+        "label": "SBG Unpack FASTQs",
+        "outputs": [
+          {
+            "description": "Output FASTQ files.",
+            "outputBinding": {
+              "glob": "decompressed_files/*.fastq",
+              "sbg:metadata": {
+                "paired_end": {
+                  "class": "Expression",
+                  "script": "{\n  filepath = $self.path\n  filename = filepath.split(\"/\").pop();\n  if (filename.lastIndexOf(\".fastq\") !== 0)\n  \tp = filename[filename.lastIndexOf(\".fastq\") - 1 ]\n  if ((p == 1) || (p == 2))\n    return p\n  else\n    return \"\"\n}",
+                  "engine": "#cwl-js-engine"
+                }
+              },
+              "sbg:inheritMetadataFrom": "#input_archive_file"
+            },
+            "sbg:fileTypes": "FASTQ",
+            "label": "Output FASTQ files",
+            "type": [
+              {
+                "items": "File",
+                "type": "array",
+                "name": "output_fastq_files"
+              }
+            ],
+            "id": "#output_fastq_files"
+          }
+        ],
+        "sbg:revision": 0,
+        "sbg:toolAuthor": "Marko Petkovic, Seven Bridges Genomics",
+        "inputs": [
+          {
+            "description": "The input archive file, containing FASTQ files, to be unpacked.",
+            "inputBinding": {
+              "prefix": "--input_archive_file",
+              "separate": true,
+              "sbg:cmdInclude": true,
+              "position": 0
+            },
+            "sbg:category": "",
+            "label": "Input archive file",
+            "sbg:fileTypes": "TAR, TAR.GZ, TGZ, TAR.BZ2, TBZ2,  GZ, BZ2, ZIP",
+            "type": [
+              "File"
+            ],
+            "id": "#input_archive_file"
+          }
+        ],
+        "temporaryFailCodes": [],
+        "sbg:copyOf": "LEE.HOJOON/neo-antigen/sbg-unpack-fastqs-1-0/0",
+        "cwlVersion": "sbg:draft-2",
+        "baseCommand": [
+          "/opt/sbg_unpack_fastqs.py"
+        ],
+        "successCodes": [],
+        "class": "CommandLineTool",
+        "requirements": [
+          {
+            "class": "ExpressionEngineRequirement",
+            "id": "#cwl-js-engine",
+            "requirements": [
+              {
+                "class": "DockerRequirement",
+                "dockerPull": "rabix/js-engine"
+              }
+            ]
+          }
+        ],
+        "sbg:revisionNotes": "Copy of LEE.HOJOON/neo-antigen/sbg-unpack-fastqs-1-0/0",
+        "sbg:createdOn": 1489960830,
+        "arguments": [],
+        "stdout": "out.txt",
+        "sbg:homepage": "https://igor.sbgenomics.com/",
+        "sbg:createdBy": "anurag.sethi",
+        "sbg:cmdPreview": "/opt/sbg_unpack_fastqs.py --input_archive_file input_file.tar > out.txt",
+        "sbg:appVersion": [
+          "sbg:draft-2"
+        ],
+        "sbg:contributors": [
+          "anurag.sethi"
+        ]
+      },
+      "sbg:x": 287.99999328526553,
+      "scatter": "#SBG_Unpack_FASTQs.input_archive_file",
+      "id": "#SBG_Unpack_FASTQs"
+    },
+    {
+      "outputs": [
+        {
+          "id": "#SBG_Group_files_by_Metadata.tuple_list"
+        }
+      ],
+      "inputs": [
+        {
+          "default": "sample_id",
+          "id": "#SBG_Group_files_by_Metadata.metadata_field"
+        },
+        {
+          "id": "#SBG_Group_files_by_Metadata.input_files",
+          "source": [
+            "#SBG_Unpack_FASTQs.output_fastq_files"
+          ]
+        }
+      ],
+      "sbg:y": 111.01561509618037,
+      "run": {
+        "y": 111.01561509618037,
+        "sbg:license": "Apache License 2.0",
+        "sbg:image_url": null,
+        "sbg:toolkit": "SBGTools",
+        "sbg:modifiedOn": 1493162619,
+        "sbg:validationErrors": [],
+        "description": "Tool accepts list of files as input and groups them based on their metadata field. The grouping is done using metadata values in three possible fields : sample_id, case_id, platform. Metadata that fields that are uniquely defining one group are either Sample ID, Case ID, Platform unit ID. Only one of these four metadata fields are required, but it has to be such that it uniquely defines grouping of files.",
+        "sbg:project": "anurag.sethi/brca-1",
+        "hints": [
+          {
+            "value": 1,
+            "class": "sbg:CPURequirement"
+          },
+          {
+            "value": 1024,
+            "class": "sbg:MemRequirement"
+          },
+          {
+            "dockerImageId": "",
+            "class": "DockerRequirement",
+            "dockerPull": "images.sbgenomics.com/djordje_klisic/sbg-pair-fastqs-by-metadata:1.0"
+          }
+        ],
+        "sbg:projectName": "BRCA",
+        "sbg:modifiedBy": "anurag.sethi",
+        "sbg:toolkitVersion": "1.0",
+        "x": 492.9999790625138,
+        "requirements": [
+          {
+            "class": "CreateFileRequirement",
+            "fileDef": [
+              {
+                "fileContent": "import functools\nimport json\nimport itertools\nimport docopt\nimport types\nUSAGE = \"\"\"\n    Usage:\n    SBG-Pair-By-Metadata.py --in_metafile FILE --metadata_field STRING --out_metafile FILE [options]\n    \n    Description:\n    Tool accepts list of files for one sample as the input and groups them based on their metadata field. This grouping is done using metadata values that are creating\n    unique combination for the files. Metadata that fields that are uniquely defining\n    one group are Sample ID, Library ID, Platform Unit ID and File Segment Number. Listed order of metadata fields is also\n    representing their hierarchy in the metadata structure. Not all of these four metadata fields are required,\n    but the present set has to be sufficient to create unique combinations for each pair of FASTQ files.\n    \n    Options:\n    \n    --help                                Show help dialog.\n    \n    --version                             Tool version.\n    \n    --in_metafile FILE                    File from which necessary metadata information will be extracted.\n    Expected value for the SBG platfrom is job.json. [Default: job.json]\n    \n    --out_metafile FILE                   File into which necessary file structure is going to be written.\n    Expected value for the SBG platform is cwl.output.json.\n    [Default: cwl.output.json]\n    \n    --metadata_field STRING                     String value based on which the grouping has to be performed.\n    [Default: sample_id]\n    \n    \n    \"\"\"\n\ndef main():\n    \n    args = docopt.docopt(USAGE, version = 1.0)\n    \n    job_json = args[\"--in_metafile\"]\n    job_json_file = open(job_json)\n    job_json_str = job_json_file.read()\n    job_json_dict = json.loads(job_json_str)\n    files_list = job_json_dict['inputs'][\"input_files\"]\n    print files_list\n    if(isinstance(files_list[0],dict)):\n        #   print \"dict yes\"\n        # If only a single list, no need to flatten\n        files_list = job_json_dict['inputs'][\"input_files\"]\n    elif isinstance(files_list, list):\n        # flatten a nested list if it exists\n        files_list = job_json_dict['inputs'][\"input_files\"]\n        files_list_new = [elem for sublist in files_list for elem in sublist]\n        files_list = files_list_new\n        print \"here\"\n    else:\n        #default case from sbg group fastq by metadata\n        files_list = list()\n        files_list.append(job_json_dict['inputs'][\"input_files\"])\n    while None in files_list:\n        files_list.remove(None)\n    print files_list\n    metadata_dictionary_list = [{elem['path'] : elem['metadata']} for elem in files_list]\n    file_dictionary = {elem['path']: elem for elem in files_list}\n    # Start working with the newly created dictionary for generating outputfile\n    metadata_field = args[\"--metadata_field\"]\n    print(\"Generating groups based on %s\" % metadata_field)\n    gathered_samples = []\n    # Gathering the metadata_field from each sample\n    gathered_samples = dict()\n    for elem in metadata_dictionary_list:\n        key = elem.keys()[0]\n        metadata_field_value =  elem[key][metadata_field]\n        if metadata_field_value in gathered_samples:\n            gathered_samples[metadata_field_value].append(file_dictionary[key])\n        else:\n            gathered_samples[metadata_field_value] = [file_dictionary[key]]\n\n    # Commiting the results to the output file\n    tuple_list_dict = {\"tuple_list\": gathered_samples.values()}\n\n    with open(args[\"--out_metafile\"],\"w\") as p:\n        json.dump(tuple_list_dict,p)\n\n\n\nif __name__ == '__main__':\n    main()",
+                "filename": "pair_by_metadata.py"
+              }
+            ]
+          }
+        ],
+        "sbg:job": {
+          "inputs": {
+            "input_files": [
+              {
+                "path": "/path/to/input_files-1.ext",
+                "class": "File",
+                "size": 0,
+                "secondaryFiles": []
+              },
+              {
+                "path": "/path/to/input_files-2.ext",
+                "class": "File",
+                "size": 0,
+                "secondaryFiles": []
+              }
+            ],
+            "metadata_field": "case_id"
+          },
+          "allocatedResources": {
+            "mem": 1024,
+            "cpu": 1
+          }
+        },
+        "stdin": "",
+        "sbg:sbgMaintained": false,
+        "sbg:latestRevision": 0,
+        "id": "anurag.sethi/brca-1/group-by-metadata/0",
+        "label": "SBG Group files by Metadata",
+        "outputs": [
+          {
+            "type": [
+              "null",
+              {
+                "items": "File",
+                "type": "array"
+              }
+            ],
+            "id": "#tuple_list"
+          }
+        ],
+        "sbg:revision": 0,
+        "sbg:toolAuthor": "Raunaq Malhotra,  Seven Bridges Genomics, <raunaq.malhotra@sbgenomics.com>",
+        "sbg:contributors": [
+          "anurag.sethi"
+        ],
+        "inputs": [
+          {
+            "description": "Select one of the metadata fields based on which files need to be grouped.",
+            "inputBinding": {
+              "prefix": "--metadata_field",
+              "separate": true,
+              "sbg:cmdInclude": true,
+              "position": 3
+            },
+            "required": false,
+            "label": "Metadata field to group by",
+            "type": [
+              "null",
+              {
+                "type": "enum",
+                "symbols": [
+                  "sample_id",
+                  "case_id",
+                  "platform"
+                ],
+                "name": "metadata_field"
+              }
+            ],
+            "sbg:includeInPorts": false,
+            "id": "#metadata_field"
+          },
+          {
+            "id": "#input_files",
+            "description": "List of files with properly set metadata fields.",
+            "required": false,
+            "label": "List of files for grouping",
+            "type": [
+              "null",
+              {
+                "items": "File",
+                "type": "array"
+              }
+            ],
+            "sbg:stageInput": "link"
+          }
+        ],
+        "temporaryFailCodes": [],
+        "cwlVersion": "sbg:draft-2",
+        "baseCommand": [
+          "python",
+          "pair_by_metadata.py"
+        ],
+        "successCodes": [],
+        "class": "CommandLineTool",
+        "appUrl": "/u/anurag.sethi/brca-1/apps/#anurag.sethi/brca-1/group-by-metadata/0",
+        "sbg:revisionNotes": "Copy of anurag.sethi/brca/group-by-metadata/0",
+        "sbg:createdOn": 1493162619,
+        "arguments": [
+          {
+            "prefix": "--in_metafile",
+            "separate": true,
+            "valueFrom": "job.json",
+            "position": 1
+          },
+          {
+            "prefix": "--out_metafile",
+            "separate": true,
+            "valueFrom": "cwl.output.json",
+            "position": 2
+          }
+        ],
+        "stdout": "",
+        "sbg:createdBy": "anurag.sethi",
+        "sbg:cmdPreview": "python pair_by_metadata.py --in_metafile job.json --out_metafile cwl.output.json",
+        "sbg:appVersion": [
+          "sbg:draft-2"
+        ],
+        "sbg:revisionsInfo": [
+          {
+            "sbg:modifiedBy": "anurag.sethi",
+            "sbg:revisionNotes": "Copy of anurag.sethi/brca/group-by-metadata/0",
+            "sbg:modifiedOn": 1493162619,
+            "sbg:revision": 0
+          }
+        ],
+        "sbg:id": "anurag.sethi/brca-1/group-by-metadata/0"
+      },
+      "sbg:x": 492.9999790625138,
+      "id": "#SBG_Group_files_by_Metadata"
+    }
+  ],
+  "sbg:canvas_zoom": 1,
+  "cwlVersion": "sbg:draft-2",
+  "id": "https://cgc-api.sbgenomics.com/v2/apps/anurag.sethi/starfusion-on-breast-cancer-samples/star-fusion-workflow/0/raw/",
+  "sbg:revisionsInfo": [
+    {
+      "sbg:modifiedBy": "anurag.sethi",
+      "sbg:revisionNotes": "Copy of anurag.sethi/troubleshoot-starfusion/star-fusion-workflow/0",
+      "sbg:modifiedOn": 1500097666,
+      "sbg:revision": 0
+    }
+  ],
+  "outputs": [
+    {
+      "type": [
+        "null",
+        {
+          "items": "File",
+          "type": "array"
+        }
+      ],
+      "sbg:y": 300,
+      "required": false,
+      "sbg:x": 1103,
+      "label": "output_array",
+      "id": "#output_array",
+      "sbg:includeInPorts": true,
+      "source": [
+        "#star_fusion_d2.output_array"
+      ]
+    }
+  ],
+  "sbg:revision": 0,
+  "inputs": [
+    {
+      "sbg:x": 204.99999401786107,
+      "type": [
+        "File"
+      ],
+      "label": "CTAT_resource_lib_tar_gz",
+      "sbg:y": 364.99998931234467,
+      "id": "#CTAT_resource_lib_tar_gz"
+    },
+    {
+      "type": [
+        {
+          "items": "File",
+          "type": "array"
+        }
+      ],
+      "sbg:y": 85.99432274743026,
+      "label": "input_archive_file",
+      "sbg:x": 94.00000641996226,
+      "sbg:fileTypes": "TAR, TAR.GZ, TGZ, TAR.BZ2, TBZ2,  GZ, BZ2, ZIP",
+      "id": "#input_archive_file",
+      "sbg:includeInPorts": true
+    }
+  ],
+  "sbg:copyOf": "anurag.sethi/troubleshoot-starfusion/star-fusion-workflow/0",
+  "label": "star-fusion-workflow",
+  "sbg:latestRevision": 0,
+  "class": "Workflow",
+  "requirements": [],
+  "sbg:revisionNotes": "Copy of anurag.sethi/troubleshoot-starfusion/star-fusion-workflow/0",
+  "sbg:createdOn": 1500097666,
+  "sbg:appVersion": [
+    "sbg:draft-2"
+  ],
+  "sbg:createdBy": "anurag.sethi",
+  "sbg:contributors": [
+    "anurag.sethi"
+  ]
+}

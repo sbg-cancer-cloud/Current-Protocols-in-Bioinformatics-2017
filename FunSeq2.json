@@ -1,0 +1,659 @@
+{
+  "id": "https://cgc-api.sbgenomics.com/v2/apps/anurag.sethi/funseq2-demo-project/funseq2/0/raw/",
+  "class": "CommandLineTool",
+  "label": "FunSeq2",
+  "description": "A flexible framework to annotate and prioritize cancer somatic mutations.\nFunSeq2 prioritizes and annotates noncoding drivers in cancer samples.  FunSeq2 has a weighted scoring system combining: inter- and intra-species conservation; loss- and gain-of-function events for transcription-factor binding; enhancer-gene linkages and network centrality; and per-element recurrence across samples. It also highlights putative drivers with information specific to a particular sample, such as differential expression.",
+  "requirements": [
+    {
+      "requirements": [
+        {
+          "dockerPull": "rabix/js-engine",
+          "class": "DockerRequirement"
+        }
+      ],
+      "class": "ExpressionEngineRequirement",
+      "id": "#cwl-js-engine"
+    }
+  ],
+  "inputs": [
+    {
+      "sbg:fileTypes": "VCF, BED",
+      "description": "User Input SNVs File",
+      "inputBinding": {
+        "itemSeparator": ",",
+        "prefix": "-f",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 1
+      },
+      "id": "#inputSNVs",
+      "sbg:stageInput": null,
+      "type": [
+        "null",
+        {
+          "items": "File",
+          "type": "array",
+          "name": "inputSNVs"
+        }
+      ],
+      "label": "inputsSNVs"
+    },
+    {
+      "description": "Input format - BED or VCF",
+      "inputBinding": {
+        "prefix": "-inf",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 2
+      },
+      "type": [
+        {
+          "type": "enum",
+          "symbols": [
+            "BED",
+            "VCF"
+          ],
+          "name": "inputFormat"
+        }
+      ],
+      "label": "input format",
+      "id": "#inputFormat"
+    },
+    {
+      "description": "Maximum length cutoff for Indel analysis.",
+      "type": [
+        "null",
+        "int"
+      ],
+      "sbg:toolDefaultValue": "20",
+      "label": "maximum indel length cutoff",
+      "id": "#maxIndelLengthCutoff"
+    },
+    {
+      "sbg:toolDefaultValue": "True",
+      "description": "To perform indel analysis",
+      "type": [
+        "null",
+        "boolean"
+      ],
+      "sbg:stageInput": null,
+      "label": "perform indel analysis",
+      "id": "#indelAnalysis"
+    },
+    {
+      "sbg:toolDefaultValue": "0",
+      "description": "Minor Allele Frequency Threshold to filter 1KG SNVs",
+      "inputBinding": {
+        "prefix": "-maf",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 4
+      },
+      "id": "#maf",
+      "type": [
+        "null",
+        "float"
+      ],
+      "label": "maf threshold"
+    },
+    {
+      "sbg:toolDefaultValue": "Somatic Genome",
+      "label": "genomeType",
+      "description": "1 - Somatic Genome (default); 2 - Germline or Personal Genome",
+      "inputBinding": {
+        "prefix": "-m",
+        "valueFrom": {
+          "script": "{\n  if ($job.inputs.genomeType) {\n    if ($job.inputs.genomeType == \"Somatic Genome\") {\n      return 1\n    } else if ($job.inputs.genomeType == \"Germline or Personal Genome\") {\n      return 2\n    }\n  } else {\n    return 1\n  }\n}",
+          "engine": "#cwl-js-engine",
+          "class": "Expression"
+        },
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 5
+      },
+      "sbg:stageInput": null,
+      "type": [
+        "null",
+        {
+          "type": "enum",
+          "symbols": [
+            "Somatic Genome",
+            "Germline or Personal Genome"
+          ],
+          "name": "genomeType"
+        }
+      ],
+      "id": "#genomeType"
+    },
+    {
+      "description": "Output format - BED or VCF",
+      "type": [
+        "null",
+        {
+          "type": "enum",
+          "symbols": [
+            "VCF",
+            "BED"
+          ],
+          "name": "outputFormat"
+        }
+      ],
+      "sbg:toolDefaultValue": "VCF",
+      "label": "outputFormat",
+      "id": "#outputFormat"
+    },
+    {
+      "description": "gene list, only output variants associated with selected genes",
+      "inputBinding": {
+        "prefix": "-g",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 7
+      },
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "gene list",
+      "id": "#geneList"
+    },
+    {
+      "sbg:fileTypes": "TSV",
+      "description": "gene expression matrix",
+      "inputBinding": {
+        "prefix": "-exp",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 8
+      },
+      "id": "#geneExpressionMatrix",
+      "sbg:stageInput": null,
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "geneExpressionMatrix"
+    },
+    {
+      "sbg:fileTypes": "TSV",
+      "description": "class file for samples in gene expression matrix - lists whether each sample is cancerous or benign",
+      "inputBinding": {
+        "prefix": "-cls",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 9
+      },
+      "id": "#classFile",
+      "sbg:stageInput": null,
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "class file"
+    },
+    {
+      "description": "gene expression format",
+      "inputBinding": {
+        "prefix": "-exf",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 10
+      },
+      "id": "#geneExpressionFormat",
+      "sbg:stageInput": null,
+      "type": [
+        "null",
+        {
+          "type": "enum",
+          "symbols": [
+            "RPKM",
+            "raw"
+          ],
+          "name": "geneExpressionFormat"
+        }
+      ],
+      "label": "format for gene expression matrix"
+    },
+    {
+      "sbg:toolDefaultValue": "5",
+      "label": "number of threads",
+      "description": "number of genomes that will be processed parallely",
+      "inputBinding": {
+        "prefix": "-p",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 11
+      },
+      "sbg:stageInput": null,
+      "type": [
+        "null",
+        "int"
+      ],
+      "id": "#numberThreads"
+    },
+    {
+      "sbg:toolDefaultValue": "All",
+      "description": "cancer type from recurrence database",
+      "inputBinding": {
+        "prefix": "-cancer",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 12
+      },
+      "id": "#cancerType",
+      "type": [
+        "null",
+        "string"
+      ],
+      "label": "cancer type from recurrence database"
+    },
+    {
+      "sbg:toolDefaultValue": "False",
+      "description": "Use unweighted scoring scheme",
+      "type": [
+        "null",
+        "boolean"
+      ],
+      "sbg:stageInput": null,
+      "label": "unweighted scoring scheme",
+      "id": "#useUnweightedScoringScheme"
+    },
+    {
+      "sbg:toolDefaultValue": "1.5 for weighted, 5 for unweighted",
+      "description": "Score threshold to call non-coding candidates",
+      "type": [
+        "null",
+        "float"
+      ],
+      "sbg:stageInput": null,
+      "label": "score threshold",
+      "id": "#scoreThreshold"
+    },
+    {
+      "description": "Use recurrence database to score variants. Recurrence gets a additional score.",
+      "inputBinding": {
+        "prefix": "-db",
+        "sbg:cmdInclude": true,
+        "separate": true,
+        "position": 13
+      },
+      "type": [
+        "null",
+        "boolean"
+      ],
+      "label": "use recurrence database",
+      "id": "#useRecurrenceDatabase"
+    },
+    {
+      "description": "Prebuilt data context for FunSeq2",
+      "type": [
+        "File"
+      ],
+      "sbg:fileTypes": "TAR",
+      "label": "Prebuilt data context",
+      "id": "#database"
+    }
+  ],
+  "outputs": [
+    {
+      "outputBinding": {
+        "glob": {
+          "script": "{\n  if (!($job.inputs.outputFormat)) {\n    return \"Output.VCF\"\n  } else if ($job.inputs.outputFormat == \"VCF\") {\n    return \"Output.VCF\"\n  } else {\n    return \"Output.BED\"\n  }\n}",
+          "engine": "#cwl-js-engine",
+          "class": "Expression"
+        },
+        "sbg:inheritMetadataFrom": "#inputSNVs"
+      },
+      "sbg:fileTypes": "VCF, BED",
+      "description": "stores detailed results for all samples",
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "detailed results per sample",
+      "id": "#detailedResults"
+    },
+    {
+      "outputBinding": {
+        "glob": {
+          "script": "{\n  if (!($job.inputs.outputFormat)) {\n    return \"Output.indel.VCF\"\n  } else if ($job.inputs.outputFormat == \"VCF\") {\n    return \"Output.indel.VCF\"\n  } else {\n    return \"Output.indel.BED\"\n  }\n}",
+          "engine": "#cwl-js-engine",
+          "class": "Expression"
+        },
+        "sbg:inheritMetadataFrom": "#inputSNVs"
+      },
+      "sbg:fileTypes": "VCF, BED",
+      "description": "contains results for indels",
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "indel results",
+      "id": "#indelResults"
+    },
+    {
+      "description": "the recurrence result when having multiple samples",
+      "type": [
+        "null",
+        "File"
+      ],
+      "outputBinding": {
+        "glob": "Recur.Summary",
+        "sbg:inheritMetadataFrom": "#inputSNVs"
+      },
+      "label": "recurrence summary",
+      "id": "#recurrenceSummary"
+    },
+    {
+      "description": "brief output of potential candidates (coding nonsynonymous/prematurestop variants, non-coding variants with score (>= 5 of un-weighted scoring scheme and >=1.5 for weighted scoring scheme) and variants in or associated with known cancer genes)",
+      "type": [
+        "null",
+        "File"
+      ],
+      "outputBinding": {
+        "glob": "Candidates.Summary",
+        "sbg:inheritMetadataFrom": "#inputSNVs"
+      },
+      "label": "candidates summary",
+      "id": "#candidatesSummary"
+    },
+    {
+      "outputBinding": {
+        "glob": "Error.log",
+        "sbg:inheritMetadataFrom": "#inputSNVs"
+      },
+      "sbg:fileTypes": "LOG",
+      "description": "error information",
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "log file for error",
+      "id": "#errorLog"
+    },
+    {
+      "outputBinding": {
+        "glob": "/DE.gene.txt",
+        "sbg:inheritMetadataFrom": "#inputSNVs"
+      },
+      "sbg:fileTypes": "TXT",
+      "description": "differentially expressed genes",
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "differentially expressed gene list",
+      "id": "#differentiallyExpressedGenes"
+    },
+    {
+      "outputBinding": {
+        "glob": "/DE.pdf",
+        "sbg:inheritMetadataFrom": "#inputSNVs"
+      },
+      "sbg:fileTypes": "PDF",
+      "description": "differential gene expression plot",
+      "type": [
+        "null",
+        "File"
+      ],
+      "label": "differential gene expression plot",
+      "id": "#differentialExpressionPlot"
+    }
+  ],
+  "hints": [
+    {
+      "value": {
+        "script": "{\n  if ($job.inputs.numberThreads) {\n    return $job.inputs.numberThreads\n  } else {\n    return 5\n  }\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "class": "sbg:CPURequirement"
+    },
+    {
+      "value": 3072,
+      "class": "sbg:MemRequirement"
+    },
+    {
+      "dockerPull": "images.sbgenomics.com/anurag_sethi/funseq2:latest",
+      "dockerImageId": "",
+      "class": "DockerRequirement"
+    }
+  ],
+  "baseCommand": [
+    "cd",
+    "/opt/funseq2-1.2/",
+    "&&",
+    "tar",
+    "-xvf",
+    {
+      "script": "{\n  return $job.inputs.database.path\n}",
+      "engine": "#cwl-js-engine",
+      "class": "Expression"
+    },
+    "&&",
+    "mv",
+    "data",
+    "data_context",
+    "&&",
+    "./funseq2.sh",
+    "-nc"
+  ],
+  "stdin": "",
+  "stdout": "",
+  "successCodes": [],
+  "temporaryFailCodes": [],
+  "arguments": [
+    {
+      "prefix": "-len",
+      "valueFrom": {
+        "script": "{\n  if (($job.inputs.indelAnalysis == null) || ($job.inputs.indelAnalysis)) {\n    if ($job.inputs.maxIndelLengthCutoff) {\n      return $job.inputs.maxIndelLengthCutoff\n    } else {\n      return 20\n    }\n  } else {\n    return \"inf\"\n  }\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 3
+    },
+    {
+      "prefix": "-outf",
+      "valueFrom": {
+        "script": "{\n  if ($job.inputs.outputFormat) {\n    return $job.inputs.outputFormat\n  } else {\n    return \"VCF\"\n  }\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 6
+    },
+    {
+      "prefix": "-o",
+      "valueFrom": "/",
+      "separate": true
+    },
+    {
+      "prefix": "",
+      "valueFrom": {
+        "script": "{\n  if ($job.inputs.useUnweightedScoringScheme) {\n    return \"-uw\"\n  } else {\n    return \"\"\n  }\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 12
+    },
+    {
+      "prefix": "-s",
+      "valueFrom": {
+        "script": "{\n  if ($job.inputs.scoreThreshold) {\n    return $job.inputs.scoreThreshold\n  } else if ($job.inputs.useUnweightedScoringScheme) {\n    return 5.0\n  } else {\n    return 1.5\n  }\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 13
+    },
+    {
+      "prefix": ";",
+      "valueFrom": {
+        "script": "{\n  \n  if (!($job.inputs.outputFormat)) {\n    return \" cd - && mv /Output.VCF ./\"\n  } else if ($job.inputs.outputFormat == \"VCF\") {\n    return \" cd - && mv /Output.VCF ./\"\n  } else {\n    return \" cd - && mv /Output.BED ./\"\n  }\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 14
+    },
+    {
+      "prefix": ";",
+      "valueFrom": {
+        "script": "{\n  \n  if (!($job.inputs.outputFormat)) {\n    return \" [ -f /Output.indel.VCF ] && mv /Output.indel.VCF ./ \"\n  } else if ($job.inputs.outputFormat == \"VCF\") {\n    return \" [ -f /Output.indel.VCF] && mv /Output.indel.VCF ./ \"\n  } else {\n    return \" [ -f /Output.indel.BED] && mv /Output.indel.BED ./\"\n  }\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 15
+    },
+    {
+      "prefix": ";",
+      "valueFrom": {
+        "script": "{\n  \n  return \"mv /Recur.Summary ./\"\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 16
+    },
+    {
+      "prefix": ";",
+      "valueFrom": {
+        "script": "{\n  return \"mv /Candidates.Summary ./\"\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 17
+    },
+    {
+      "prefix": ";",
+      "valueFrom": {
+        "script": "{\n  return \"mv /Error.log ./\"\n}",
+        "engine": "#cwl-js-engine",
+        "class": "Expression"
+      },
+      "separate": true,
+      "position": 18
+    }
+  ],
+  "sbg:links": [
+    {
+      "label": "Publication",
+      "id": "https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0480-5"
+    },
+    {
+      "label": "Source Code",
+      "id": "http://funseq2.gersteinlab.org/static/download/funseq2.1.2.tar.bz2"
+    },
+    {
+      "label": "Docker Image",
+      "id": "http://funseq2.gersteinlab.org/static/download/funseq2-docker.zip"
+    },
+    {
+      "label": "Manual",
+      "id": "http://info.gersteinlab.org/Funseq2#F._Output_files"
+    },
+    {
+      "label": "Server",
+      "id": "http://funseq2.gersteinlab.org/downloads"
+    }
+  ],
+  "sbg:createdOn": 1477950967,
+  "cwlVersion": "sbg:draft-2",
+  "sbg:id": "anurag.sethi/funseq2-demo-project/funseq2/0",
+  "sbg:modifiedOn": 1477950967,
+  "sbg:revisionsInfo": [
+    {
+      "sbg:modifiedBy": "anurag.sethi",
+      "sbg:revisionNotes": "Copy of anurag.sethi/brca-funseq/funseq2/0",
+      "sbg:revision": 0,
+      "sbg:modifiedOn": 1477950967
+    }
+  ],
+  "sbg:projectName": "funseq2 Demo Project",
+  "sbg:latestRevision": 0,
+  "sbg:copyOf": "anurag.sethi/brca-funseq/funseq2/0",
+  "sbg:revision": 0,
+  "sbg:modifiedBy": "anurag.sethi",
+  "sbg:image_url": null,
+  "sbg:categories": [
+    "Prioritization"
+  ],
+  "sbg:cmdPreview": "cd /opt/funseq2-1.2/ && tar -xvf /path/to/database.ext && mv data data_context && ./funseq2.sh -nc -o / -inf BED -len 20 -outf BED   -s 1.5 ;  cd - && mv /Output.BED ./ ;  [ -f /Output.indel.BED] && mv /Output.indel.BED ./ ; mv /Recur.Summary ./ ; mv /Candidates.Summary ./ ; mv /Error.log ./",
+  "sbg:toolkit": "Funseq2",
+  "sbg:toolAuthor": "Mark Gerstein/Yale University",
+  "sbg:revisionNotes": "Copy of anurag.sethi/brca-funseq/funseq2/0",
+  "sbg:toolkitVersion": "2.1.2",
+  "sbg:project": "anurag.sethi/funseq2-demo-project",
+  "sbg:appVersion": [
+    "sbg:draft-2"
+  ],
+  "sbg:createdBy": "anurag.sethi",
+  "sbg:sbgMaintained": false,
+  "sbg:job": {
+    "allocatedResources": {
+      "cpu": 7,
+      "mem": 3072
+    },
+    "inputs": {
+      "geneExpressionFormat": "RPKM",
+      "geneExpressionMatrix": {
+        "secondaryFiles": [],
+        "path": "/path/to/geneExpressionMatrix.ext",
+        "class": "File",
+        "size": 0
+      },
+      "classFile": {
+        "secondaryFiles": [],
+        "path": "/path/to/classFile.ext",
+        "class": "File",
+        "size": 0
+      },
+      "genomeType": "Germline or Personal Genome",
+      "cancerType": "cancerType-string-value",
+      "maxIndelLengthCutoff": 20,
+      "useUnweightedScoringScheme": false,
+      "scoreThreshold": null,
+      "outputFormat": "BED",
+      "database": {
+        "secondaryFiles": [],
+        "path": "/path/to/database.ext",
+        "class": "File",
+        "size": 0
+      },
+      "numberThreads": 7,
+      "inputSNVs": [
+        {
+          "secondaryFiles": [],
+          "path": "/path/to/inputSNVs-1.ext",
+          "class": "File",
+          "size": 0
+        },
+        {
+          "secondaryFiles": [],
+          "path": "/path/to/inputSNVs-2.ext",
+          "class": "File",
+          "size": 0
+        }
+      ],
+      "geneList": {
+        "secondaryFiles": [],
+        "path": "/path/to/geneList.txt",
+        "class": "File",
+        "size": 0
+      },
+      "indelAnalysis": true,
+      "maf": 9.19976584693073,
+      "inputFormat": "BED",
+      "useRecurrenceDatabase": true
+    }
+  },
+  "sbg:license": "CC0 1.0 Universal",
+  "sbg:validationErrors": [],
+  "sbg:contributors": [
+    "anurag.sethi"
+  ]
+}
